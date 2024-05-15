@@ -12,70 +12,44 @@ namespace WycieczkiV2.Repository
         {
             _context = context;
         }
-        public IEnumerable<Trip> GetAll()
+        public Task<List<Trip>> GetAllAsync()
         {
-            return _context.Trips.ToList();
+            return _context.Trips.ToListAsync();
         }
-  
-        public Trip? GetById(int TripId)
-        {
-            return _context.Trips.Find(TripId);
-        }
-        public void Insert(Trip trip)
-        {
-            _context.Trips.Add(trip);
-        }
- 
-        public void Update(Trip trip)
-        {
 
-            _context.Entry(trip).State = EntityState.Modified;
-        }
-    
-        public void Delete(int TripId)
+        public ValueTask<Trip?> GetByIdAsync(int? TripId)
         {
-            //First, fetch the Employee details based on the EmployeeID id
-            Trip? trip = _context.Trips.Find(TripId);
-            //If the employee object is not null, then remove the employee
+            return _context.Trips.FindAsync(TripId);
+        }
+        public async Task InsertAsync(Trip trip)
+        {
+            await _context.Trips.AddAsync(trip);
+        }
+
+         public void Update(Trip trip)
+            {
+                _context.Trips.Update(trip);
+            }
+
+        public async Task DeleteAsync(Trip tripId)
+        {
+            var trip = await _context.Trips.FindAsync(tripId.TripId);
             if (trip != null)
             {
-                //This will mark the Entity State as Deleted
                 _context.Trips.Remove(trip);
+                await _context.SaveChangesAsync();
             }
+        }
+        public async Task SaveAsync()
+        {
+            await _context.SaveChangesAsync();
+        }
 
-        }
-        //This method will make the changes permanent in the database
-        //That means once we call Insert, Update, and Delete Methods, then we need to call
-        //the Save method to make the changes permanent in the database
-        public void Save()
+        public bool Exist(Trip client)
         {
-            //Based on the Entity State, it will generate the corresponding SQL Statement and
-            //Execute the SQL Statement in the database
-            //For Added Entity State: It will generate INSERT SQL Statement
-            //For Modified Entity State: It will generate UPDATE SQL Statement
-            //For Deleted Entity State: It will generate DELETE SQL Statement
-            _context.SaveChanges();
+            return _context.Trips.Any(e => e.TripId == client.TripId);
         }
-        private bool disposed = false;
-        //As a context object is a heavy object or you can say time-consuming object
-        //So, once the operations are done we need to dispose of the same using Dispose method
-        //The EmployeeDBContext class inherited from DbContext class and the DbContext class
-        //is Inherited from the IDisposable interface
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!this.disposed)
-            {
-                if (disposing)
-                {
-                    _context.Dispose();
-                }
-            }
-            this.disposed = true;
-        }
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
+
+       
     }
 }

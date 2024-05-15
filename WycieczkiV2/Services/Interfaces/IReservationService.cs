@@ -1,10 +1,8 @@
 ﻿using WycieczkiV2.Models;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 
-namespace WycieczkiV2.Repository.Interfaces
+namespace WycieczkiV2.Services.Interfaces
 {
-    public interface IReservationRepository
+    public interface IReservationService
     {
         Task<List<Reservation>> GetAllAsync();
 
@@ -18,5 +16,6 @@ namespace WycieczkiV2.Repository.Interfaces
         Task<List<Student>> GetAllStudentsAsync();
         Task<List<Trip>> GetAllTripsAsync();
 
+        //Task<List<Reservation>> SortByPriceAsync();
     }
 }

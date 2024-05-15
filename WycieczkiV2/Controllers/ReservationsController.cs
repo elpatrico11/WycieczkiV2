@@ -7,26 +7,38 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using WycieczkiV2.Data;
 using WycieczkiV2.Models;
+using WycieczkiV2.Repository.Interfaces;
+using WycieczkiV2.Services.Interfaces;
+using WycieczkiV2.ViewModel;
+using FluentValidation;
+using AutoMapper;
+
 
 namespace WycieczkiV2.Controllers
 {
     public class ReservationsController : Controller
     {
-        private readonly TripsContext _context;
+        private readonly IReservationService _context;
 
-        public ReservationsController(TripsContext context)
+        private readonly IValidator<ReservationViewModel> _reservationValidator;
+
+        private readonly IMapper _mapper;
+        public ReservationsController(IReservationService context, IValidator<ReservationViewModel> reservationValidator, IMapper mapper)
         {
             _context = context;
+            _reservationValidator = reservationValidator;
+            _mapper = mapper;
         }
 
-        // GET: Reservations
+
+
         public async Task<IActionResult> Index()
         {
-            var tripsContext = _context.Reservations.Include(r => r.Student).Include(r => r.Trip);
-            return View(await tripsContext.ToListAsync());
+            var reservations = await _context.GetAllAsync();
+            var reservationList = _mapper.Map<List<Reservation>, List<ReservationViewModel>>(reservations);
+            return View(reservationList);
         }
 
-        // GET: Reservations/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -34,45 +46,43 @@ namespace WycieczkiV2.Controllers
                 return NotFound();
             }
 
-            var reservation = await _context.Reservations
-                .Include(r => r.Student)
-                .Include(r => r.Trip)
-                .FirstOrDefaultAsync(m => m.ReservationId == id);
+            var reservation = await _context.GetByIdAsync(id);
             if (reservation == null)
             {
                 return NotFound();
             }
 
-            return View(reservation);
+            var reservationViewModel = _mapper.Map<Reservation, ReservationViewModel>(reservation);
+
+            return View(reservationViewModel);
         }
 
-        // GET: Reservations/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            ViewData["StudentId"] = new SelectList(_context.Students, "StudentId", "FirstName");
-            ViewData["TripId"] = new SelectList(_context.Trips, "TripId", "Name");
+            ViewData["StudentId"] = new SelectList(await _context.GetAllStudentsAsync(), "StudentId", "FirstName");
+            ViewData["TripId"] = new SelectList(await _context.GetAllTripsAsync(), "TripId", "Name");
             return View();
         }
 
-        // POST: Reservations/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("ReservationId,StudentId,TripId,DateOfReservation,StartDate,EndDate,TotalPrice,NumberOfPeople,PaymentDate")] Reservation reservation)
+        public async Task<IActionResult> Create([Bind("ReservationId,StudentId,TripId,DateOfReservation,StartDate,EndDate,TotalPrice,NumberOfPeople,PaymentDate")] ReservationViewModel reservationViewModel)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(reservation);
-                await _context.SaveChangesAsync();
+                
+
+                var reservation = _mapper.Map<ReservationViewModel, Reservation>(reservationViewModel);
+                await _context.InsertAsync(reservation);
+                await _context.SaveAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["StudentId"] = new SelectList(_context.Students, "StudentId", "FirstName", reservation.StudentId);
-            ViewData["TripId"] = new SelectList(_context.Trips, "TripId", "Name", reservation.TripId);
-            return View(reservation);
+            ViewData["StudentId"] = new SelectList(await _context.GetAllStudentsAsync(), "StudentId", "FirstName", reservationViewModel.StudentId);
+            ViewData["TripId"] = new SelectList(await _context.GetAllTripsAsync(), "TripId", "Name", reservationViewModel.TripId);
+            return View(reservationViewModel);
         }
 
-        // GET: Reservations/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -80,38 +90,40 @@ namespace WycieczkiV2.Controllers
                 return NotFound();
             }
 
-            var reservation = await _context.Reservations.FindAsync(id);
+            var reservation = await _context.GetByIdAsync(id);
             if (reservation == null)
             {
                 return NotFound();
             }
-            ViewData["StudentId"] = new SelectList(_context.Students, "StudentId", "FirstName", reservation.StudentId);
-            ViewData["TripId"] = new SelectList(_context.Trips, "TripId", "Name", reservation.TripId);
-            return View(reservation);
+
+            var reservationViewModel = _mapper.Map<Reservation, ReservationViewModel>(reservation);
+
+            ViewData["StudentId"] = new SelectList(await _context.GetAllStudentsAsync(), "StudentId", "FirstName", reservationViewModel.StudentId);
+            ViewData["TripId"] = new SelectList(await _context.GetAllTripsAsync(), "TripId", "Name", reservationViewModel.TripId);
+
+            return View(reservationViewModel);
         }
 
-        // POST: Reservations/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("ReservationId,StudentId,TripId,DateOfReservation,StartDate,EndDate,TotalPrice,NumberOfPeople,PaymentDate")] Reservation reservation)
+        public async Task<IActionResult> Edit(int id, [Bind("ReservationId,StudentId,TripId,DateOfReservation,StartDate,EndDate,TotalPrice,NumberOfPeople,PaymentDate")] ReservationViewModel reservationViewModel)
         {
-            if (id != reservation.ReservationId)
+            if (id != reservationViewModel.ReservationId)
             {
                 return NotFound();
             }
 
             if (ModelState.IsValid)
             {
+                var reservation = _mapper.Map<ReservationViewModel, Reservation>(reservationViewModel);
                 try
                 {
                     _context.Update(reservation);
-                    await _context.SaveChangesAsync();
+                    await _context.SaveAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!ReservationExists(reservation.ReservationId))
+                    if (!await ReservationExists(reservation.ReservationId))
                     {
                         return NotFound();
                     }
@@ -122,12 +134,11 @@ namespace WycieczkiV2.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["StudentId"] = new SelectList(_context.Students, "StudentId", "FirstName", reservation.StudentId);
-            ViewData["TripId"] = new SelectList(_context.Trips, "TripId", "Name", reservation.TripId);
-            return View(reservation);
+            ViewData["StudentId"] = new SelectList(await _context.GetAllStudentsAsync(), "StudentId", "FirstName", reservationViewModel.StudentId);
+            ViewData["TripId"] = new SelectList(await _context.GetAllTripsAsync(), "TripId", "Name", reservationViewModel.TripId);
+            return View(reservationViewModel);
         }
 
-        // GET: Reservations/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -135,36 +146,39 @@ namespace WycieczkiV2.Controllers
                 return NotFound();
             }
 
-            var reservation = await _context.Reservations
-                .Include(r => r.Student)
-                .Include(r => r.Trip)
-                .FirstOrDefaultAsync(m => m.ReservationId == id);
+            var reservation = await _context.GetByIdAsync(id);
+
+            var reservationViewModel = _mapper.Map<Reservation, ReservationViewModel>(reservation);
+
             if (reservation == null)
             {
                 return NotFound();
             }
 
-            return View(reservation);
+            ViewData["StudentId"] = new SelectList(await _context.GetAllStudentsAsync(), "StudentId", "FirstName", reservationViewModel.StudentId);
+            ViewData["TripId"] = new SelectList(await _context.GetAllTripsAsync(), "TripId", "Name", reservationViewModel.TripId);
+
+            return View(reservationViewModel);
         }
 
-        // POST: Reservations/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var reservation = await _context.Reservations.FindAsync(id);
+            var reservation = await _context.GetByIdAsync(id);
             if (reservation != null)
             {
-                _context.Reservations.Remove(reservation);
+                await _context.DeleteAsync(reservation);
             }
 
-            await _context.SaveChangesAsync();
+            await _context.SaveAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool ReservationExists(int id)
+        private async Task<bool> ReservationExists(int id)
         {
-            return _context.Reservations.Any(e => e.ReservationId == id);
+            var reservation = await _context.GetByIdAsync(id);
+            return reservation != null;
         }
     }
 }

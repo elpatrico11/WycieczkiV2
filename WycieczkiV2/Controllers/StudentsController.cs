@@ -7,22 +7,38 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using WycieczkiV2.Data;
 using WycieczkiV2.Models;
+using WycieczkiV2.Repository.Interfaces;
+using WycieczkiV2.Services.Interfaces;
+using WycieczkiV2.ViewModel;
+using AutoMapper;
+using FluentValidation;
+
 
 namespace WycieczkiV2.Controllers
 {
     public class StudentsController : Controller
     {
-        private readonly TripsContext _context;
+        private readonly IStudentService _context;
 
-        public StudentsController(TripsContext context)
+        private readonly IValidator<StudentViewModel> _studentValidator;
+
+        private readonly IMapper _mapper;
+        public StudentsController(IStudentService context, IValidator<StudentViewModel> studentValidator, IMapper mapper)
         {
-            _context = context;
+            this._context = context;
+            _studentValidator = studentValidator;
+            _mapper = mapper;
         }
+
+
+        
 
         // GET: Students
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Students.ToListAsync());
+            var students = await _context.GetAllAsync();
+            var studentList = _mapper.Map<List<Student>, List<StudentViewModel>>(students);
+            return View(studentList);
         }
 
         // GET: Students/Details/5
@@ -33,14 +49,18 @@ namespace WycieczkiV2.Controllers
                 return NotFound();
             }
 
-            var student = await _context.Students
-                .FirstOrDefaultAsync(m => m.StudentId == id);
+
+
+            var student = await _context.GetByIdAsync(id);
             if (student == null)
             {
                 return NotFound();
             }
 
-            return View(student);
+           
+
+            var studentViewModel = _mapper.Map<Student, StudentViewModel>(student);
+            return View(studentViewModel);
         }
 
         // GET: Students/Create
@@ -54,15 +74,17 @@ namespace WycieczkiV2.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("StudentId,FirstName,LastName,DateOfBirth,PhoneNumber,Email,Citizenship")] Student student)
+        public async Task<IActionResult> Create([Bind("StudentId,FirstName,LastName,DateOfBirth,PhoneNumber,Email,Citizenship")] StudentViewModel studentViewModel)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(student);
-                await _context.SaveChangesAsync();
+               var student = _mapper.Map<StudentViewModel, Student>(studentViewModel);
+
+                await _context.InsertAsync(student);
+                await _context.SaveAsync();
                 return RedirectToAction(nameof(Index));
             }
-            return View(student);
+            return View(studentViewModel);
         }
 
         // GET: Students/Edit/5
@@ -73,36 +95,39 @@ namespace WycieczkiV2.Controllers
                 return NotFound();
             }
 
-            var student = await _context.Students.FindAsync(id);
+            var student = await _context.GetByIdAsync(id);
             if (student == null)
             {
                 return NotFound();
             }
-            return View(student);
+
+            var studentViewModel = _mapper.Map<Student, StudentViewModel>(student);
+            return View(studentViewModel);
+
         }
 
-        // POST: Students/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("StudentId,FirstName,LastName,DateOfBirth,PhoneNumber,Email,Citizenship")] Student student)
+        public async Task<IActionResult> Edit(int id, [Bind("StudentId,FirstName,LastName,DateOfBirth,PhoneNumber,Email,Citizenship")] StudentViewModel studentViewModel)
         {
-            if (id != student.StudentId)
+            if (id != studentViewModel.StudentId)
             {
                 return NotFound();
             }
 
             if (ModelState.IsValid)
             {
+                var student = _mapper.Map<StudentViewModel, Student>(studentViewModel);
+
                 try
                 {
                     _context.Update(student);
-                    await _context.SaveChangesAsync();
+                    await _context.SaveAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!StudentExists(student.StudentId))
+                    if (!StudentExists(student))
                     {
                         return NotFound();
                     }
@@ -113,7 +138,7 @@ namespace WycieczkiV2.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            return View(student);
+            return View(studentViewModel);
         }
 
         // GET: Students/Delete/5
@@ -124,14 +149,16 @@ namespace WycieczkiV2.Controllers
                 return NotFound();
             }
 
-            var student = await _context.Students
-                .FirstOrDefaultAsync(m => m.StudentId == id);
+            var student = await _context.GetByIdAsync(id);
+
+            var studentViewModel = _mapper.Map<Student, StudentViewModel>(student);
+               
             if (student == null)
             {
                 return NotFound();
             }
 
-            return View(student);
+            return View(studentViewModel);
         }
 
         // POST: Students/Delete/5
@@ -139,19 +166,19 @@ namespace WycieczkiV2.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var student = await _context.Students.FindAsync(id);
+            var student = await _context.GetByIdAsync(id);
             if (student != null)
             {
-                _context.Students.Remove(student);
+                await _context.DeleteAsync(student);
             }
 
-            await _context.SaveChangesAsync();
+            await _context.SaveAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool StudentExists(int id)
+        private bool StudentExists(Student student)
         {
-            return _context.Students.Any(e => e.StudentId == id);
+            return _context.Exist(student);
         }
     }
 }

@@ -20,7 +20,7 @@ namespace WycieczkiV2.Models
         [Column(TypeName = "decimal(18, 2)")]
         public decimal Price { get; set; }
 
-        public virtual ICollection<Reservation> Reservations { get; set; }
+        public ICollection<Reservation> Reservations { get; set; }
 
         public string Origin { get; set; } // Start destination of the trip
 

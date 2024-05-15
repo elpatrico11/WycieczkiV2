@@ -15,39 +15,44 @@ namespace WycieczkiV2.Repository
         {
             _context = context;
         }
-
-        public IEnumerable<Student> GetAll()
+        public Task<List<Student>> GetAllAsync()
         {
-            return _context.Students.ToList();
+            return _context.Students.ToListAsync();
         }
 
-        public Student GetById(int studentId)
+        public ValueTask<Student?> GetByIdAsync(int? studentId)
         {
-            return _context.Students.Find(studentId);
+            return _context.Students.FindAsync(studentId);
         }
-
-        public void Insert(Student student)
+        public async Task InsertAsync(Student student)
         {
-            _context.Students.Add(student);
+            await _context.Students.AddAsync(student);
         }
 
         public void Update(Student student)
         {
-            _context.Entry(student).State = EntityState.Modified;
+            _context.Students.Update(student);
         }
 
-        public void Delete(int studentId)
+        public async Task DeleteAsync(Student studentId)
         {
-            Student student = _context.Students.Find(studentId);
+            var student = await _context.Students.FindAsync(studentId.StudentId);
             if (student != null)
             {
                 _context.Students.Remove(student);
+                await _context.SaveChangesAsync();
             }
         }
 
-        public void Save()
+        public async Task SaveAsync()
         {
-            _context.SaveChanges();
+           await _context.SaveChangesAsync();
         }
+
+        public bool Exist(Student student)
+        {
+            return _context.Students.Any(e => e.StudentId == student.StudentId);
+        }
+
     }
 }

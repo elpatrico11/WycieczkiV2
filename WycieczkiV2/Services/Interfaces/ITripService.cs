@@ -1,17 +1,15 @@
-﻿using System;
+﻿using WycieczkiV2.Models;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using WycieczkiV2.Models;
 
-namespace WycieczkiV2.Repository.Interfaces
+namespace WycieczkiV2.Services.Interfaces
 {
-    public interface ITripRepository
+    public interface ITripService
     {
         Task<List<Trip>> GetAllAsync();
         ValueTask<Trip> GetByIdAsync(int? tripId);
         Task InsertAsync(Trip trip);
         void Update(Trip trip);
-        Task DeleteAsync(Trip tripId); 
+        Task DeleteAsync(Trip tripId);
         Task SaveAsync();
 
         public bool Exist(Trip tripId);

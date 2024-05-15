@@ -4,11 +4,13 @@ namespace WycieczkiV2.Repository.Interfaces
 {
     public interface IStudentRepository
     {
-        IEnumerable<Student> GetAll();
-        Student GetById(int studentId);
-        void Insert(Student student);
+        Task<List<Student>> GetAllAsync();
+        ValueTask<Student> GetByIdAsync(int? StudentId);
+        Task InsertAsync(Student student);
         void Update(Student student);
-        void Delete(int studentId);
-        void Save();
+        Task DeleteAsync(Student StudentId);
+        Task SaveAsync();
+
+        public bool Exist(Student StudentId);
     }
 }

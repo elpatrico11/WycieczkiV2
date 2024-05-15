@@ -16,6 +16,9 @@ public class TripsContext : DbContext
         modelBuilder.Entity<Trip>().ToTable("Trip");
         modelBuilder.Entity<Student>().ToTable("Student");
         modelBuilder.Entity<Reservation>().ToTable("Reservation");
+
+        modelBuilder.Entity<Reservation>().HasOne(x => x.Student).WithMany(x => x.Reservations).HasForeignKey(x => x.StudentId).HasPrincipalKey(x=>x.StudentId);
+        modelBuilder.Entity<Reservation>().HasOne(x => x.Trip).WithMany(x => x.Reservations).HasForeignKey(x => x.TripId).HasPrincipalKey(x => x.TripId);
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

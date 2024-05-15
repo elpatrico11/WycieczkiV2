@@ -2,6 +2,12 @@ using Microsoft.EntityFrameworkCore;
 using WycieczkiV2.Data;
 using WycieczkiV2.Repository.Interfaces;
 using WycieczkiV2.Repository;
+using WycieczkiV2.Services.Interfaces;
+using WycieczkiV2.Services;
+using FluentValidation;
+using WycieczkiV2.Validation;
+using WycieczkiV2.ViewModel;
+using WycieczkiV2.AutoMapper;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +18,23 @@ builder.Services.AddDbContext<TripsContext>(options =>
 builder.Services.AddScoped<IReservationRepository, ReservationRepository>();
 builder.Services.AddScoped<IStudentRepository, StudentRepository>();
 builder.Services.AddScoped<ITripRepository, TripRepository>();
+
+builder.Services.AddScoped<IStudentService, StudentService>();
+builder.Services.AddScoped<ITripService, TripService>();
+builder.Services.AddScoped<IReservationService, ReservationService>();
+
+//Add automapper
+
+builder.Services.AddAutoMapper(options =>
+{
+    options.AddProfile<Mapper>();
+});
+
+
+// Add validators
+builder.Services.AddScoped<IValidator<StudentViewModel>, StudentValidator>();
+builder.Services.AddScoped<IValidator<TripViewModel>, TripValidator>();
+builder.Services.AddScoped<IValidator<ReservationViewModel>, ReservationValidator>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();

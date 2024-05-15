@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace WycieczkiV2.Models
+namespace WycieczkiV2.ViewModel
 {
-    public class Student
+    public class StudentViewModel
     {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int StudentId { get; set; }
 
         [Required]
@@ -21,15 +16,13 @@ namespace WycieczkiV2.Models
 
         public DateTime DateOfBirth { get; set; }
 
-     
+
         public string PhoneNumber { get; set; }
 
-      
+
         public string Email { get; set; }
 
-        [MaxLength(50)] 
+        [MaxLength(50)]
         public string Citizenship { get; set; }
-
-        public ICollection<Reservation> Reservations { get; set; }
     }
 }
