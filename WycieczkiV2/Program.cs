@@ -8,12 +8,19 @@ using FluentValidation;
 using WycieczkiV2.Validation;
 using WycieczkiV2.ViewModel;
 using WycieczkiV2.AutoMapper;
+using Microsoft.AspNetCore.Identity;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add DbContext to the service collection
 builder.Services.AddDbContext<TripsContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<TripsContext>();
+
+
+
 
 builder.Services.AddScoped<IReservationRepository, ReservationRepository>();
 builder.Services.AddScoped<IStudentRepository, StudentRepository>();
@@ -55,11 +62,15 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseAuthorization();
+
 
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapRazorPages();
 
 app.Run();
 

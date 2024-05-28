@@ -12,10 +12,12 @@ using WycieczkiV2.Services.Interfaces;
 using WycieczkiV2.ViewModel;
 using FluentValidation;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 
 
 namespace WycieczkiV2.Controllers
 {
+    [Authorize]
     public class ReservationsController : Controller
     {
         private readonly IReservationService _context;

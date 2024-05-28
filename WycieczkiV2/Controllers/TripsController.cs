@@ -8,9 +8,11 @@ using WycieczkiV2.Data;
 using WycieczkiV2.Models;
 using WycieczkiV2.Services.Interfaces;
 using WycieczkiV2.ViewModel;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WycieczkiV2.Controllers
 {
+    [Authorize]
     public class TripsController : Controller
     {
         private readonly ITripService _context;

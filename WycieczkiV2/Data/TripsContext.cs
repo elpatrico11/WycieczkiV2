@@ -1,33 +1,23 @@
 ﻿namespace WycieczkiV2.Data;
 using Microsoft.EntityFrameworkCore;
 using WycieczkiV2.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
-public class TripsContext : DbContext
+public class TripsContext : IdentityDbContext<IdentityUser>
 {
-    public TripsContext(DbContextOptions<TripsContext> options) : base(options)
-    {
-    }
     public DbSet<Trip> Trips { get; set; }
     public DbSet<Student> Students { get; set; }
     public DbSet<Reservation> Reservations { get; set; }
+    public TripsContext(DbContextOptions<TripsContext> options) : base(options)
+    {
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Trip>().ToTable("Trip");
-        modelBuilder.Entity<Student>().ToTable("Student");
-        modelBuilder.Entity<Reservation>().ToTable("Reservation");
-
-        modelBuilder.Entity<Reservation>().HasOne(x => x.Student).WithMany(x => x.Reservations).HasForeignKey(x => x.StudentId).HasPrincipalKey(x=>x.StudentId);
-        modelBuilder.Entity<Reservation>().HasOne(x => x.Trip).WithMany(x => x.Reservations).HasForeignKey(x => x.TripId).HasPrincipalKey(x => x.TripId);
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<Trip>().ToTable("Trips");
+        modelBuilder.Entity<Student>().ToTable("Students");
+        modelBuilder.Entity<Reservation>().ToTable("Reservations");
     }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        if (!optionsBuilder.IsConfigured)
-        {
-            optionsBuilder.UseSqlServer("DefaultConnection");
-        }
-        optionsBuilder.EnableSensitiveDataLogging();
-    }
-
 }
