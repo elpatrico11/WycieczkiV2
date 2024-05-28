@@ -17,7 +17,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace WycieczkiV2.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Admin, Manager")]
     public class ReservationsController : Controller
     {
         private readonly IReservationService _context;

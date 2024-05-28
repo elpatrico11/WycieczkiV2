@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace WycieczkiV2.Controllers
 {
-    [Authorize]
+    
     public class TripsController : Controller
     {
         private readonly ITripService _context;
@@ -27,6 +27,8 @@ namespace WycieczkiV2.Controllers
         }
 
         // GET: Trips
+
+        [AllowAnonymous]
         public async Task<IActionResult> Index()
         {
             var trips = await _context.GetAllAsync();
@@ -49,6 +51,7 @@ namespace WycieczkiV2.Controllers
         }
 
         // GET: Trips/Create
+        [Authorize(Roles = "Admin,Manager")] // Admin and Manager can create trips
         public IActionResult Create()
         {
             return View();
@@ -57,6 +60,7 @@ namespace WycieczkiV2.Controllers
         // POST: Trips/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Manager")] // Admin and Manager can create trips
         public async Task<IActionResult> Create([Bind("TripId,Name,Date,Price,Origin,Destination,Country")] TripViewModel tripViewModel)
         {
             var validationResult = await _tripValidator.ValidateAsync(tripViewModel);
@@ -77,6 +81,7 @@ namespace WycieczkiV2.Controllers
         }
 
         // GET: Trips/Edit/5
+        [Authorize(Roles = "Admin,Manager")] // Admin and Manager can edit trips
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -93,6 +98,7 @@ namespace WycieczkiV2.Controllers
         // POST: Trips/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Manager")] // Admin and Manager can edit trips
         public async Task<IActionResult> Edit(int id, [Bind("TripId,Name,Date,Price,Origin,Destination,Country")] TripViewModel tripViewModel)
         {
             if (id != tripViewModel.TripId)
@@ -124,6 +130,7 @@ namespace WycieczkiV2.Controllers
         }
 
         // GET: Trips/Delete/5
+        [Authorize(Roles = "Admin")] // Only Admin can access delete page
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -140,6 +147,7 @@ namespace WycieczkiV2.Controllers
         // POST: Trips/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")] // Only Admin can delete trips
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var trip = await _context.GetByIdAsync(id);

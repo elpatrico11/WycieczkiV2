@@ -4,6 +4,7 @@ using WycieczkiV2.Repository.Interfaces;
 using WycieczkiV2.Repository;
 using WycieczkiV2.Services.Interfaces;
 using WycieczkiV2.Services;
+using System.Threading.Tasks;
 using FluentValidation;
 using WycieczkiV2.Validation;
 using WycieczkiV2.ViewModel;
@@ -17,7 +18,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<TripsContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<TripsContext>();
+builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
+    .AddRoles<IdentityRole>()
+    .AddEntityFrameworkStores<TripsContext>();
 
 
 
@@ -56,7 +59,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-CreateDbIfNotExists(app);
+await CreateDbIfNotExistsAsync(app);
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
@@ -72,9 +75,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapRazorPages();
 
-app.Run();
-
-static void CreateDbIfNotExists(IHost host)
+async Task CreateDbIfNotExistsAsync(IHost host)
 {
     using (var scope = host.Services.CreateScope())
     {
@@ -82,7 +83,7 @@ static void CreateDbIfNotExists(IHost host)
         try
         {
             var context = services.GetRequiredService<TripsContext>();
-            DbInitializer.Initialize(context);
+            await DbInitializer.InitializeAsync(context);
         }
         catch (Exception ex)
         {
@@ -91,3 +92,55 @@ static void CreateDbIfNotExists(IHost host)
         }
     }
 }
+
+using (var scope = app.Services.CreateScope())
+{
+   var roleManager = 
+        scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+    var roles = new[] {"Admin", "Manager", "User"}; 
+    
+    foreach(var role in roles)
+    {
+        if (!await roleManager.RoleExistsAsync(role))
+        {
+            await roleManager.CreateAsync(new IdentityRole(role));
+            Console.WriteLine($"Role '{role}' created successfully.");
+        }
+        else
+        {
+            Console.WriteLine($"Role '{role}' already exists.");
+        }
+
+
+           
+     
+    }
+}
+
+using (var scope = app.Services.CreateScope())
+{
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+
+    string email = "admin@admin.com";
+    string password = "Test1234!";
+    
+
+    if (await userManager.FindByEmailAsync(email) == null)
+    {
+        var user = new IdentityUser();
+        user.UserName = email;
+        user.Email = email;
+        user.EmailConfirmed = true;
+
+        var result = await userManager.CreateAsync(user, password);
+        await userManager.AddToRoleAsync(user, "Admin");
+    }
+
+      
+  
+};
+
+    app.Run();
+
+
